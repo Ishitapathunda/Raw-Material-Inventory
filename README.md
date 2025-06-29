@@ -10,7 +10,7 @@ It was created as part of an internship to gain hands-on experience in front-end
 
 ## 🎥 Demo Video
 
-Watch the working demo here: [📽️ Loom Demo Link](https://www.loom.com/share/your-video-id-here)
+Watch the working demo here: [📽️ Loom Demo Link]([https://www.loom.com/share/your-video-id-here](https://www.loom.com/share/7a68f0b6a6424a1ea669a5c9a0def7e1?sid=6373cbcc-3a74-4184-8080-8552d71cf322))
 
 ---
 
@@ -19,18 +19,6 @@ Watch the working demo here: [📽️ Loom Demo Link](https://www.loom.com/share
 - 🔸 [Home Page of JsonPowerDB](https://login2explore.com)
 - 🔸 [Register to use JsonPowerDB](http://api.login2explore.com)
 - 🔸 [JsonPowerDB Documentation](https://login2explore.com/jpdb/docs.html)
-
----
-
-## 📑 Table of Contents
-
-- [Project Description](#project-description)
-- [Demo Video](#demo-video)
-- [Important Links](#important-links)
-- [Features](#features)
-- [Screenshots](#screenshots)
-- [Technologies Used](#technologies-used)
-- [Project Status](#project-status)
 
 ---
 
@@ -56,12 +44,14 @@ Watch the working demo here: [📽️ Loom Demo Link](https://www.loom.com/share
 
 ## 📸 Illustrations
 
-![Home Page Screenshot](screenshots/homepage.png)
+![Screenshot 2025-06-29 122222](https://github.com/user-attachments/assets/9ea57f23-1b27-4cf8-b7dc-4d8fffdcabcc)
 > Welcome screen with menu
 
-![Item Management Screenshot](screenshots/item-management.png)
+![Screenshot 2025-06-29 122245](https://github.com/user-attachments/assets/a90ffdd7-b99e-4b91-998a-dfe75b726683)
 > Item CRUD operations
 
+![Screenshot 2025-06-29 122310](https://github.com/user-attachments/assets/76a883a3-49f2-4a28-8cc7-d4453f1c8f27)
+> Report
 ---
 
 ## 🛠️ Technologies Used
