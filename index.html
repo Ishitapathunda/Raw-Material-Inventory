@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Raw Material Inventory</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://www.login2explore.com/jpdb/resources/js/0.0.4/jpdb-commons.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    .sidebar {
+      min-width: 200px;
+      background-color: #f8f9fa;
+    }
+    .nav-link.active {
+      font-weight: bold;
+      color: blue !important;
+    }
+    footer {
+      position: fixed;
+      width: 100%;
+      bottom: 0;
+    }
+  </style>
+</head>
+<body>
+  <header class="bg-dark text-white text-center py-3">
+    <h2>Raw Material Inventory Management</h2>
+  </header>
+  <div class="d-flex" style="padding-bottom: 60px;">
+    <nav class="sidebar p-3">
+      <ul class="nav flex-column">
+        <li class="nav-item"><a href="#" class="nav-link" id="nav-itemMgmt">Item Management</a></li>
+        <li class="nav-item"><a href="#" class="nav-link" id="nav-inward">Item Received (Inward)</a></li>
+        <li class="nav-item"><a href="#" class="nav-link" id="nav-outward">Item Issue (Outward)</a></li>
+        <li class="nav-item"><a href="#" class="nav-link" id="nav-report">Item Report</a></li>
+      </ul>
+    </nav>
+    <main class="flex-grow-1 p-4" id="main-content">
+    </main>
+  </div>
+  <footer class="bg-dark text-white text-center py-2">
+    &copy; 2025 Raw Material Inventory System
+  </footer>
+
+  <script>
+    const jpdbBaseURL = "http://api.login2explore.com:5577";
+    const jpdbIRL = "/api/irl";
+    const jpdbIML = "/api/iml";
+    const dbName = "INVENTORY_DB";
+    const relItems = "ITEMS";
+    const relInward = "INWARD";
+    const relOutward = "OUTWARD";
+    const connToken = "90934300|-31949202327332711|90957718";
+
+    $(document).ready(function () {
+  $("#main-content").html(`
+    <div class="text-center">
+      <h4>Welcome! Select an option from the menu.</h4>
+      <img src="Screenshot 2025-06-28 124104.png" alt="Inventory Image" class="img-fluid mt-3" style="max-width: 500px;" />
+    </div>
+  `);
+});
+
+    let currentRecNo = -1;
+
+    function createGET_ALL_RECORDSRequest(token, dbName, relName) {
+      return JSON.stringify({
+        token: token,
+        dbName: dbName,
+        rel: relName,
+        cmd: "GET_ALL"
+      });
+    }
+
+    function createPutRequest(data, relName) {
+      return createPUTRequest(connToken, JSON.stringify(data), dbName, relName);
+    }
+
+    function saveItem() {
+      const item = {
+        ItemID: $("#itemId").val().trim(),
+        ItemName: $("#itemName").val().trim(),
+        OpeningStock: parseFloat($("#openingStock").val().trim()),
+        UoM: $("#uom").val().trim()
+      };
+
+      if (!item.ItemID || !item.ItemName || isNaN(item.OpeningStock) || !item.UoM) {
+        alert("Please fill all fields correctly.");
+        return;
+      }
+
+      const req = createPutRequest(item, relItems);
+      $.ajaxSetup({ async: false });
+      executeCommandAtGivenBaseUrl(req, jpdbBaseURL, jpdbIML);
+      $.ajaxSetup({ async: true });
+      alert("Item saved!");
+    }
+
+function saveInward() {
+  const inward = {
+    ReceiptNo: $("#receiptNo").val().trim(),
+    ReceiptDate: $("#receiptDate").val(),
+    ItemID: $("#inwardItemId").val().trim(),
+    QtyReceived: parseFloat($("#qtyReceived").val())
+  };
+  if (!inward.ReceiptNo || !inward.ReceiptDate || !inward.ItemID || isNaN(inward.QtyReceived)) {
+    return alert("Please fill all fields correctly.");
+  }
+
+  const putReq = createPUTRequest(connToken, JSON.stringify(inward), dbName, relInward);
+  $.ajaxSetup({ async: false });
+  executeCommandAtGivenBaseUrl(putReq, jpdbBaseURL, jpdbIML);
+  $.ajaxSetup({ async: true });
+
+  const getReq = createGET_BY_KEYRequest(connToken, dbName, relItems,
+                    JSON.stringify({ ItemID: inward.ItemID }));
+  $.ajaxSetup({ async: false });
+  const itemRes = executeCommandAtGivenBaseUrl(getReq, jpdbBaseURL, jpdbIRL);
+  $.ajaxSetup({ async: true });
+
+  if (itemRes.status === 200) {
+    const parsed = JSON.parse(itemRes.data);
+    const itemRec = parsed.record;
+    const recNo = parsed.rec_no;
+
+    itemRec.ItemsReceived = (parseFloat(itemRec.ItemsReceived) || 0) + inward.QtyReceived;
+
+    const updReq = createUPDATERecordRequest(connToken,
+                       JSON.stringify(itemRec), dbName, relItems, recNo);
+    $.ajaxSetup({ async: false });
+    executeCommandAtGivenBaseUrl(updReq, jpdbBaseURL, jpdbIML);
+    $.ajaxSetup({ async: true });
+  }
+
+  alert("Inward saved & ItemsReceived updated!");
+}
+
+    function loadItemMgmt() {
+      $("#main-content").html(`
+        <h3>Item Management</h3>
+        <form>
+          <div class="mb-3"><label>Item ID</label><input type="text" id="itemId" class="form-control" /></div>
+          <div class="mb-3"><label>Item Name</label><input type="text" id="itemName" class="form-control" /></div>
+          <div class="mb-3"><label>Opening Stock</label><input type="number" id="openingStock" class="form-control" step="0.001" /></div>
+          <div class="mb-3"><label>Unit of Measurement</label><input type="text" id="uom" class="form-control" /></div>
+
+          <div class="btn-group mb-3" role="group">
+            <button type="button" class="btn btn-success" onclick="addItem()">Add</button>
+            <button type="button" class="btn btn-primary" onclick="editItem()">Edit</button>
+            <button type="button" class="btn btn-warning" onclick="updateItem()">Update</button>
+            <button type="button" class="btn btn-danger" onclick="deleteItem()">Delete</button>
+            <button type="button" class="btn btn-secondary" onclick="clearItemForm()">Clear</button>
+          </div>
+
+          <div class="mt-3">
+            <button type="button" class="btn btn-outline-secondary me-1" onclick="getFirst()">First</button>
+            <button type="button" class="btn btn-outline-secondary me-1" onclick="getPrev()">Prev</button>
+            <button type="button" class="btn btn-outline-secondary me-1" onclick="getNext()">Next</button>
+            <button type="button" class="btn btn-outline-secondary" onclick="getLast()">Last</button>
+          </div>
+        </form>
+      `);
+    }
+
+    function clearItemForm() {
+      $("#itemId").val("");
+      $("#itemName").val("");
+      $("#openingStock").val("");
+      $("#uom").val("");
+    }
+
+    function addItem() {
+      const data = {
+        ItemID: $("#itemId").val().trim(),
+        ItemName: $("#itemName").val().trim(),
+        OpeningStock: parseFloat($("#openingStock").val().trim()),
+        UoM: $("#uom").val().trim(),
+        ItemsReceived: 0,
+        ItemsIssued: 0
+      };
+      const req = createPUTRequest(connToken, JSON.stringify(data), dbName, relItems);
+      $.ajaxSetup({ async: false });
+      executeCommandAtGivenBaseUrl(req, jpdbBaseURL, jpdbIML);
+      $.ajaxSetup({ async: true });
+      alert("Item added successfully!");
+      clearItemForm();
+    }
+
+    function editItem() {
+      const itemId = $("#itemId").val().trim();
+      if (!itemId) return alert("Enter Item ID to edit.");
+      const req = createGET_BY_KEYRequest(connToken, dbName, relItems, JSON.stringify({ ItemID: itemId }));
+      $.ajaxSetup({ async: false });
+      const res = executeCommandAtGivenBaseUrl(req, jpdbBaseURL, jpdbIRL);
+      $.ajaxSetup({ async: true });
+      if (res.status === 200) {
+        const data = JSON.parse(res.data).record;
+        $("#itemName").val(data.ItemName);
+        $("#openingStock").val(data.OpeningStock);
+        $("#uom").val(data.UoM);
+        currentRecNo = JSON.parse(res.data).rec_no;
+      } else {
+        alert("Item not found.");
+      }
+    }
+
+    function updateItem() {
+      if (currentRecNo === -1) return alert("No record selected for update.");
+      const data = {
+        ItemID: $("#itemId").val().trim(),
+        ItemName: $("#itemName").val().trim(),
+        OpeningStock: parseFloat($("#openingStock").val().trim()),
+        UoM: $("#uom").val().trim()
+      };
+      const req = createUPDATERecordRequest(connToken, JSON.stringify(data), dbName, relItems, currentRecNo);
+      $.ajaxSetup({ async: false });
+      executeCommandAtGivenBaseUrl(req, jpdbBaseURL, jpdbIML);
+      $.ajaxSetup({ async: true });
+      alert("Item updated successfully!");
+      clearItemForm();
+      currentRecNo = -1;
+    }
+
+    function deleteItem() {
+      if (currentRecNo === -1) return alert("No record selected to delete.");
+      const req = createREMOVERecordRequest(connToken, dbName, relItems, currentRecNo);
+      $.ajaxSetup({ async: false });
+      executeCommandAtGivenBaseUrl(req, jpdbBaseURL, jpdbIML);
+      $.ajaxSetup({ async: true });
+      alert("Item deleted successfully!");
+      clearItemForm();
+      currentRecNo = -1;
+    }
+
+    // Navigation bindings
+    $("#nav-itemMgmt").click(function () {
+      $(".nav-link").removeClass("active");
+      $(this).addClass("active");
+      loadItemMgmt();
+    });
+
+    function fillItemForm(data) {
+  $("#itemId").val(data.ItemID);
+  $("#itemName").val(data.ItemName);
+  $("#openingStock").val(data.OpeningStock);
+  $("#uom").val(data.UoM);
+}
+
+function getFirst() {
+  const req = createFIRST_RECORDRequest(connToken, dbName, relItems);
+  $.ajaxSetup({ async: false });
+  const res = executeCommandAtGivenBaseUrl(req, jpdbBaseURL, jpdbIRL);
+  $.ajaxSetup({ async: true });
+  const data = JSON.parse(res.data).record;
+  currentRecNo = JSON.parse(res.data).rec_no;
+  fillItemForm(data);
+}
+
+function getLast() {
+  const req = createLAST_RECORDRequest(connToken, dbName, relItems);
+  $.ajaxSetup({ async: false });
+  const res = executeCommandAtGivenBaseUrl(req, jpdbBaseURL, jpdbIRL);
+  $.ajaxSetup({ async: true });
+  const data = JSON.parse(res.data).record;
+  currentRecNo = JSON.parse(res.data).rec_no;
+  fillItemForm(data);
+}
+
+function getNext() {
+  if (currentRecNo === -1) return alert("No record selected!");
+  const req = createNEXT_RECORDRequest(connToken, dbName, relItems, currentRecNo);
+  $.ajaxSetup({ async: false });
+  const res = executeCommandAtGivenBaseUrl(req, jpdbBaseURL, jpdbIRL);
+  $.ajaxSetup({ async: true });
+
+  if (res.status === 400) return alert("No next record.");
+  const data = JSON.parse(res.data).record;
+  currentRecNo = JSON.parse(res.data).rec_no;
+  fillItemForm(data);
+}
+
+function getPrev() {
+  if (currentRecNo === -1) return alert("No record selected!");
+  const req = createPREV_RECORDRequest(connToken, dbName, relItems, currentRecNo);
+  $.ajaxSetup({ async: false });
+  const res = executeCommandAtGivenBaseUrl(req, jpdbBaseURL, jpdbIRL);
+  $.ajaxSetup({ async: true });
+
+  if (res.status === 400) return alert("No previous record.");
+  const data = JSON.parse(res.data).record;
+  currentRecNo = JSON.parse(res.data).rec_no;
+  fillItemForm(data);
+}
+
+
+   <!-- truncated for brevity -->
+    function loadInward() {
+      $("#main-content").html(`
+        <h3>Item Received (Inward)</h3>
+        <form>
+          <div class="mb-3"><label>Receipt No</label><input type="text" id="receiptNo" class="form-control" /></div>
+          <div class="mb-3"><label>Receipt Date</label><input type="date" id="receiptDate" class="form-control" /></div>
+          <div class="mb-3">
+            <label>Item ID</label>
+            <input type="text" id="inwardItemId" class="form-control" onblur="fetchInwardItemName()" />
+            <div class="form-text text-danger" id="inwardItemError"></div>
+          </div>
+          <div class="mb-3">
+            <label>Item Name</label>
+            <input type="text" id="inwardItemName" class="form-control" disabled />
+          </div>
+          <div class="mb-3"><label>Quantity Received</label><input type="number" id="qtyReceived" class="form-control" step="0.01" /></div>
+          <button type="button" class="btn btn-success" onclick="saveInward()">Save Inward</button>
+        </form>
+      `);
+    }
+
+    function fetchInwardItemName() {
+      const itemId = $("#inwardItemId").val().trim();
+      if (!itemId) return;
+
+      const req = createGET_BY_KEYRequest(connToken, dbName, relItems, JSON.stringify({ ItemID: itemId }));
+      $.ajaxSetup({ async: false });
+      const res = executeCommandAtGivenBaseUrl(req, jpdbBaseURL, jpdbIRL);
+      $.ajaxSetup({ async: true });
+
+      if (res.status === 200) {
+        const data = JSON.parse(res.data).record;
+        $("#inwardItemName").val(data.ItemName);
+        $("#inwardItemError").text("");
+      } else {
+        $("#inwardItemError").text("Item not present");
+        $("#inwardItemId").focus();
+        $("#inwardItemName").val("");
+      }
+    }
+ 
+    function loadOutward() {
+      $("#main-content").html(`
+        <h3>Item Issue (Outward)</h3>
+        <form>
+          <div class="mb-3"><label>Issue No</label><input type="text" id="issueNo" class="form-control" /></div>
+          <div class="mb-3"><label>Issue Date</label><input type="date" id="issueDate" class="form-control" /></div>
+          <div class="mb-3">
+            <label>Item ID</label>
+            <input type="text" id="outwardItemId" class="form-control" onblur="fetchOutwardItemDetails()" />
+            <div class="form-text text-danger" id="outwardItemError"></div>
+          </div>
+          <div class="mb-3">
+            <label>Item Name</label>
+            <input type="text" id="outwardItemName" class="form-control" disabled />
+          </div>
+          <div class="mb-3">
+            <label>Quantity Issued</label>
+            <input type="number" id="qtyIssued" class="form-control" step="0.01" />
+            <div class="form-text text-danger" id="qtyIssuedError"></div>
+          </div>
+          <button type="button" class="btn btn-warning" onclick="saveOutward()">Save Outward</button>
+        </form>
+      `);
+    }
+
+    function fetchOutwardItemDetails() {
+      const itemId = $("#outwardItemId").val().trim();
+      if (!itemId) return;
+
+      const req = createGET_BY_KEYRequest(connToken, dbName, relItems, JSON.stringify({ ItemID: itemId }));
+      $.ajaxSetup({ async: false });
+      const res = executeCommandAtGivenBaseUrl(req, jpdbBaseURL, jpdbIRL);
+      $.ajaxSetup({ async: true });
+
+      if (res.status === 200) {
+        const data = JSON.parse(res.data).record;
+        $("#outwardItemName").val(data.ItemName);
+        $("#outwardItemError").text("");
+        $("#outwardItemName").data("stockData", data); // Store stock data for later use
+      } else {
+        $("#outwardItemError").text("Item not present");
+        $("#outwardItemId").focus();
+        $("#outwardItemName").val("");
+      }
+    }
+
+function saveOutward() {
+  const outward = {
+    IssueNo: $("#issueNo").val().trim(),
+    IssueDate: $("#issueDate").val(),
+    ItemID: $("#outwardItemId").val().trim(),
+    QtyIssued: parseFloat($("#qtyIssued").val())
+  };
+
+  if (!outward.IssueNo || !outward.IssueDate || !outward.ItemID || isNaN(outward.QtyIssued)) {
+    return alert("Please fill all fields correctly.");
+  }
+
+  // 1️ Fetch the ITEMS record
+  const getReq = createGET_BY_KEYRequest(connToken, dbName, relItems,
+                    JSON.stringify({ ItemID: outward.ItemID }));
+  $.ajaxSetup({ async: false });
+  const getRes = executeCommandAtGivenBaseUrl(getReq, jpdbBaseURL, jpdbIRL);
+  $.ajaxSetup({ async: true });
+  console.log("GET_BY_KEY response:", getRes);
+
+  if (getRes.status !== 200) {
+    return alert("Item not present in inventory.");
+  }
+
+  const parsed = JSON.parse(getRes.data);
+  const itemRec = parsed.record;
+  const recNo = parsed.rec_no;
+  console.log("Fetched ITEM record:", itemRec, "rec_no:", recNo);
+
+  // 2️ Stock check
+  const opening = parseFloat(itemRec.OpeningStock) || 0;
+  const received = parseFloat(itemRec.ItemsReceived) || 0;
+  const issued = parseFloat(itemRec.ItemsIssued) || 0;
+  const available = opening + received - issued;
+
+  console.log(`Stock calculation ➝ opening: ${opening}, received: ${received}, issued: ${issued}, available: ${available}`);
+  if (outward.QtyIssued > available) {
+    return alert("Quantity entered is more than available stock (" + available + ").");
+  }
+
+  // 3️ Insert OUTWARD record
+  const putOutReq = createPUTRequest(connToken, JSON.stringify(outward), dbName, relOutward);
+  $.ajaxSetup({ async: false });
+  const putOutRes = executeCommandAtGivenBaseUrl(putOutReq, jpdbBaseURL, jpdbIML);
+  $.ajaxSetup({ async: true });
+  console.log("Inserted OUTWARD record:", putOutRes);
+
+  if (putOutRes.status !== 200) {
+    return alert("Failed to save Issue record. Try again.");
+  }
+
+  // 4️ Update ItemsIssued in ITEMS table
+  const newIssued = issued + outward.QtyIssued;
+  itemRec.ItemsIssued = newIssued;
+  console.log("Updating ItemsIssued to:", newIssued);
+
+  const updReq = createUPDATERecordRequest(connToken,
+                   JSON.stringify(itemRec), dbName, relItems, recNo);
+  $.ajaxSetup({ async: false });
+  const updRes = executeCommandAtGivenBaseUrl(updReq, jpdbBaseURL, jpdbIML);
+  $.ajaxSetup({ async: true });
+  console.log("UPDATE ITEMS response:", updRes);
+
+  if (updRes.status !== 200) {
+    alert("Issue recorded, but failed to update item stock. Please check database.");
+  } else {
+    alert("Outward saved & ItemsIssued updated!");
+    // Clear form fields
+    $("#issueNo, #issueDate, #outwardItemId, #outwardItemName, #qtyIssued").val("");
+  }
+}
+
+
+   function loadReport() {
+  $("#main-content").html(`
+    <h3>Item Report</h3>
+    <form class="row g-3 mb-3">
+      <div class="col-md-3">
+        <label for="fromId" class="form-label">From Item ID</label>
+        <input type="text" id="fromId" class="form-control" />
+      </div>
+      <div class="col-md-3">
+        <label for="toId" class="form-label">To Item ID</label>
+        <input type="text" id="toId" class="form-control" />
+      </div>
+      <div class="col-md-3 align-self-end">
+        <button type="button" class="btn btn-success" onclick="generateReport()">Load Report</button>
+      </div>
+    </form>
+    <table class="table table-bordered">
+      <thead class="table-dark"><tr><th>Item ID</th><th>Item Name</th><th>Current Stock</th></tr></thead>
+      <tbody id="reportBody"></tbody>
+    </table>
+  `);
+}
+
+function generateReport() {
+  const fromId = $("#fromId").val().trim();
+  const toId = $("#toId").val().trim();
+
+  const req = createGET_ALL_RECORDSRequest(connToken, dbName, relItems);
+  $.ajaxSetup({ async: false });
+  const result = executeCommandAtGivenBaseUrl(req, jpdbBaseURL, jpdbIRL);
+  $.ajaxSetup({ async: true });
+
+  const parsed = JSON.parse(result.data);
+  const records = parsed.json_records;
+
+  let rows = "";
+  records.forEach(entry => {
+    if (!entry || !entry.record) return; // 🔐 safeguard
+
+    const r = entry.record;
+
+    const os = parseFloat(r.OpeningStock || 0);
+    const ir = parseFloat(r.ItemsReceived || 0);
+    const isd = parseFloat(r.ItemsIssued || 0);
+
+    const currentStock = os + ir - isd;
+
+    if ((fromId === "" || r.ItemID >= fromId) && (toId === "" || r.ItemID <= toId)) {
+      rows += `<tr><td>${r.ItemID}</td><td>${r.ItemName}</td><td>${currentStock.toFixed(3)}</td></tr>`;
+    }
+  });
+
+  $("#reportBody").html(rows || `<tr><td colspan='3'>No records found</td></tr>`);
+}
+
+    // Navigation bindings
+    $("#nav-itemMgmt").click(function () {
+      $(".nav-link").removeClass("active");
+      $(this).addClass("active");
+      loadItemMgmt();
+    });
+    $("#nav-inward").click(function () {
+      $(".nav-link").removeClass("active");
+      $(this).addClass("active");
+      loadInward();
+    });
+    $("#nav-outward").click(function () {
+      $(".nav-link").removeClass("active");
+      $(this).addClass("active");
+      loadOutward();
+    });
+    $("#nav-report").click(function () {
+      $(".nav-link").removeClass("active");
+      $(this).addClass("active");
+      loadReport();
+    });
+  </script>
+</body>
+</html>
