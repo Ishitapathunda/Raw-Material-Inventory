@@ -14,6 +14,10 @@ It was created as part of an internship to gain hands-on experience in front-end
 
 ---
 
+Live Demo: https://ishitapathunda.github.io/Raw-Material-Inventory/
+
+---
+
 ## 🔗 Important Links
 
 - 🔸 [Home Page of JsonPowerDB](https://login2explore.com)
