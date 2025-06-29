@@ -64,6 +64,38 @@ It was created as part of an internship to gain hands-on experience in front-end
 
 ---
 
+🚀 How to Run This App
+Follow these steps to run the Raw Material Inventory Management Web App locally:
+
+1. Clone this repository
+
+git clone https://github.com/Ishitapathunda/Raw-Material-Inventory.git
+cd Raw-Material-Inventory
+
+2. Open the project
+You can open the project in any code editor (e.g., VS Code) or directly open the index.html file in your browser.
+
+3. Register on JsonPowerDB
+Go to: Register to use JsonPowerDB
+
+Get your Connection Token (you will use it in the code if you want to replace the default one)
+
+4. Update your token (Optional)
+If you generated a new token:
+
+Open <script> section in index.html
+
+Replace the existing token value in:
+
+const connToken = "your-new-token-here";
+5. Done! 🎉
+Now you can:
+
+Add and manage items
+
+Record item inward and outward transactions
+
+View live stock reports
 ## 🚧 Project Status
 
 ✅ **Completed** – All core functionalities are implemented and working.
