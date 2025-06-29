@@ -10,7 +10,7 @@ It was created as part of an internship to gain hands-on experience in front-end
 
 ## 🎥 Demo Video
 
-Watch the working demo here: [📽️ Loom Demo Link]([https://www.loom.com/share/your-video-id-here](https://www.loom.com/share/7a68f0b6a6424a1ea669a5c9a0def7e1?sid=6373cbcc-3a74-4184-8080-8552d71cf322))
+🎬 [Click here to watch the demo](https://www.loom.com/share/7a68f0b6a6424a1ea669a5c9a0def7e1?sid=6373cbcc-3a74-4184-8080-8552d71cf322)
 
 ---
 
