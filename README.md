@@ -14,7 +14,17 @@ It was created as part of an internship to gain hands-on experience in front-end
 
 ---
 
-Live Demo: https://ishitapathunda.github.io/Raw-Material-Inventory/
+## 🚀 Live Demo
+
+**Frontend Live Link**: [Click to View](https://ishitapathunda.github.io/Raw-Material-Inventory/)
+
+> ⚠️ **Note**: This is a static frontend hosted on GitHub Pages.  
+> Due to browser security policies, **API calls to JsonPowerDB (HTTP) are blocked** on this live site (served over HTTPS).
+
+📌 To fully experience the app:
+- **Download the project**
+- **Run it locally** in a browser (like Chrome/Firefox)
+- Make sure your browser allows HTTP requests from local files (or use Firefox for easier testing)
 
 ---
 
